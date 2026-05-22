@@ -1,34 +1,13 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { convert, compare, add, subtract, divide } from "../api/api";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-
-const UNIT_MAP = {
-  LENGTH: ["INCH", "FEET", "YARD", "CENTIMETER"],
-  VOLUME: ["GALLON", "LITRE", "MILLILITER"],
-  WEIGHT: ["GRAM", "KILOGRAM", "TONNE"],
-  TEMPERATURE: ["CELSIUS", "FAHRENHEIT"],
-};
-
-const TYPE_ICONS = {
-  LENGTH: "📏",
-  WEIGHT: "⚖️",
-  TEMPERATURE: "🌡️",
-  VOLUME: "🧪",
-};
-
-const OPERATIONS = [
-  { value: "COMPARE", label: "Comparison" },
-  { value: "CONVERT", label: "Conversion" },
-  { value: "ADD", label: "Add" },
-  { value: "SUBTRACT", label: "Subtract" },
-  { value: "DIVIDE", label: "Divide" },
-];
-
-function formatUnit(unit) {
-  return unit.charAt(0) + unit.slice(1).toLowerCase();
-}
+import { UNIT_MAP, formatUnit } from "../components/dashboard/constants";
+import TypeSelector from "../components/dashboard/TypeSelector";
+import OperationSelector from "../components/dashboard/OperationSelector";
+import ValueInputCard from "../components/dashboard/ValueInputCard";
+import ResultDisplay from "../components/dashboard/ResultDisplay";
 
 export default function DashboardPage() {
   const { logout } = useAuth();
@@ -46,6 +25,7 @@ export default function DashboardPage() {
 
   const availableUnits = UNIT_MAP[quantityType];
 
+  // Reset units & result whenever the quantity type changes
   useEffect(() => {
     setUnit1(availableUnits[0]);
     setUnit2(availableUnits.length > 1 ? availableUnits[1] : availableUnits[0]);
@@ -79,24 +59,20 @@ export default function DashboardPage() {
     try {
       if (operation === "CONVERT") {
         const data = await convert(quantityType, parseFloat(value1), unit1, targetUnit);
-        const outputUnit = data.targetUnitStr || data.targetUnit || data.unit || targetUnit;
-        setResult({ text: `${data.resultValue.toFixed(2)} ${formatUnit(outputUnit)}`, type: "success" });
+        setResult({ text: data.resultValue.toFixed(3).toString(), type: "success" });
       } else if (operation === "COMPARE") {
         const data = await compare(quantityType, parseFloat(value1), unit1, parseFloat(value2), unit2);
         const isEqual = data === true || data === "true";
         setResult({ text: isEqual ? "EQUAL" : "NOT EQUAL", type: isEqual ? "success" : "danger" });
       } else if (operation === "ADD") {
         const data = await add(quantityType, parseFloat(value1), unit1, parseFloat(value2), unit2, targetUnit);
-        const outputUnit = data.targetUnitStr || data.targetUnit || data.unit || targetUnit;
-        setResult({ text: `${data.resultValue.toFixed(2)} ${formatUnit(outputUnit)}`, type: "success" });
+        setResult({ text: data.resultValue.toFixed(3).toString(), type: "success" });
       } else if (operation === "SUBTRACT") {
         const data = await subtract(quantityType, parseFloat(value1), unit1, parseFloat(value2), unit2, targetUnit);
-        const outputUnit = data.targetUnitStr || data.targetUnit || data.unit || targetUnit;
-        setResult({ text: `${data.resultValue.toFixed(2)} ${formatUnit(outputUnit)}`, type: "success" });
+        setResult({ text: data.resultValue.toFixed(3).toString(), type: "success" });
       } else if (operation === "DIVIDE") {
         const data = await divide(quantityType, parseFloat(value1), unit1, parseFloat(value2), unit2, targetUnit);
-        const outputUnit = data.targetUnitStr || data.targetUnit || data.unit || targetUnit;
-        setResult({ text: `${data.resultValue.toFixed(2)} ${formatUnit(outputUnit)}`, type: "success" });
+        setResult({ text: data.resultValue.toFixed(3).toString(), type: "success" });
       }
       toast.success("Operation successful!");
     } catch (err) {
@@ -118,137 +94,63 @@ export default function DashboardPage() {
       <div className="row justify-content-center">
         <div className="col-lg-9">
 
-          {/* CHOOSE TYPE */}
-          <h6 className="text-uppercase text-muted fw-bold small mb-3">Choose Type</h6>
-          <div className="row row-cols-2 row-cols-md-4 g-3 mb-4">
-            {Object.keys(UNIT_MAP).map((type) => (
-              <div className="col" key={type}>
-                <div
-                  className={`card text-center py-3 border-2 type-card ${quantityType === type ? "active" : ""}`}
-                  onClick={() => handleTypeSelect(type)}
-                >
-                  <div className="type-icon">{TYPE_ICONS[type]}</div>
-                  <div className="fw-semibold mt-1">{formatUnit(type)}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Quantity Type Selector */}
+          <TypeSelector selected={quantityType} onSelect={handleTypeSelect} />
 
-          {/* CHOOSE ACTION */}
-          <h6 className="text-uppercase text-muted fw-bold small mb-3">Choose Action</h6>
-          <div className="btn-group w-100 mb-4" role="group">
-            {OPERATIONS.map((op) => (
-              <button
-                key={op.value}
-                type="button"
-                className={`btn ${operation === op.value ? "btn-primary" : "btn-outline-secondary"}`}
-                onClick={() => handleOperationSelect(op.value)}
-              >
-                {op.label}
-              </button>
-            ))}
-          </div>
+          {/* Operation Selector */}
+          <OperationSelector selected={operation} onSelect={handleOperationSelect} />
 
-          {/* FROM / TO */}
+          {/* Conversion / Comparison Form */}
           <form onSubmit={handleSubmit} id="conversionForm">
-            <div className="row g-3 mb-4">
-              {/* FROM card */}
+            <div className="row g-3 mb-4 value-row">
+              {/* VALUE 1 card */}
               <div className="col-md-6">
-                <div className="card shadow-sm">
-                  <div className="card-body">
-                    <h6 className="text-uppercase text-muted fw-bold small mb-2">From</h6>
-                    <input
-                      type="number"
-                      className="form-control value-input mb-3"
-                      id="inputValue1"
-                      placeholder="0"
-                      step="0.01"
-                      value={value1}
-                      onChange={(e) => setValue1(e.target.value)}
-                      required
-                    />
-                    <select
-                      className="form-select"
-                      id="inputUnit1"
-                      value={unit1}
-                      onChange={(e) => setUnit1(e.target.value)}
-                    >
-                      {availableUnits.map((u) => (
-                        <option key={u} value={u}>{formatUnit(u)}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                <ValueInputCard
+                  label="Value 1"
+                  value={value1}
+                  onValueChange={setValue1}
+                  unit={unit1}
+                  onUnitChange={setUnit1}
+                  units={availableUnits}
+                  inputId="inputValue1"
+                  selectId="inputUnit1"
+                />
               </div>
 
-              {/* TO / Second Value card */}
+              {/* Operator icon */}
+              {showValue2 && (
+                <span className="operator-icon">
+                  {operation === "ADD" ? "+" : operation === "SUBTRACT" ? "−" : operation === "DIVIDE" ? "÷" : "⇌"}
+                </span>
+              )}
+              {!showValue2 && (
+                <span className="operator-icon">→</span>
+              )}
+
+              {/* VALUE 2 / TO card */}
               <div className="col-md-6">
-                <div className="card shadow-sm">
-                  <div className="card-body">
-                    <h6 className="text-uppercase text-muted fw-bold small mb-2">
-                      {showValue2 ? "Second Value" : "To"}
-                    </h6>
-                    {showValue2 ? (
-                      <>
-                        <input
-                          type="number"
-                          className="form-control value-input mb-3"
-                          id="inputValue2"
-                          placeholder="0"
-                          step="0.01"
-                          value={value2}
-                          onChange={(e) => setValue2(e.target.value)}
-                          required
-                        />
-                        <select
-                          className="form-select"
-                          id="inputUnit2"
-                          value={unit2}
-                          onChange={(e) => setUnit2(e.target.value)}
-                        >
-                          {availableUnits.map((u) => (
-                            <option key={u} value={u}>{formatUnit(u)}</option>
-                          ))}
-                        </select>
-                      </>
-                    ) : (
-                      <>
-                        <div className="value-input text-muted mb-3">—</div>
-                        <select
-                          className="form-select"
-                          id="targetUnit"
-                          value={targetUnit}
-                          onChange={(e) => setTargetUnit(e.target.value)}
-                        >
-                          {availableUnits.map((u) => (
-                            <option key={u} value={u}>{formatUnit(u)}</option>
-                          ))}
-                        </select>
-                      </>
-                    )}
-                  </div>
-                </div>
+                {showValue2 ? (
+                  <ValueInputCard
+                    label="Value 2"
+                    value={value2}
+                    onValueChange={setValue2}
+                    unit={unit2}
+                    onUnitChange={setUnit2}
+                    units={availableUnits}
+                    inputId="inputValue2"
+                    selectId="inputUnit2"
+                  />
+                ) : (
+                  <ValueInputCard
+                    label="To"
+                    unit={targetUnit}
+                    onUnitChange={setTargetUnit}
+                    units={availableUnits}
+                    selectId="targetUnit"
+                  />
+                )}
               </div>
             </div>
-
-            {/* Result Unit for ADD */}
-            {operation === "ADD" && (
-              <div className="card shadow-sm mb-4">
-                <div className="card-body">
-                  <h6 className="text-uppercase text-muted fw-bold small mb-2">Result Unit</h6>
-                  <select
-                    className="form-select"
-                    id="targetUnit"
-                    value={targetUnit}
-                    onChange={(e) => setTargetUnit(e.target.value)}
-                  >
-                    {availableUnits.map((u) => (
-                      <option key={u} value={u}>{formatUnit(u)}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
 
             {/* Submit */}
             <button type="submit" className="btn btn-primary btn-lg w-100" disabled={loading} id="submitBtn">
@@ -259,13 +161,15 @@ export default function DashboardPage() {
             </button>
           </form>
 
-          {/* Result */}
-          {result && (
-            <div className={`alert alert-${result.type} mt-4 text-center`} role="alert" id="resultDisplay">
-              <h5 className="alert-heading">Result</h5>
-              <p className="mb-0 fs-2 fw-bold" id="finalResult">{result.text}</p>
-            </div>
-          )}
+          {/* Single unified Result box (includes target-unit picker when needed) */}
+          <ResultDisplay
+            result={result}
+            loading={loading}
+            showTargetUnit={showTargetUnit}
+            targetUnit={targetUnit}
+            onTargetUnitChange={setTargetUnit}
+            units={availableUnits}
+          />
 
         </div>
       </div>
