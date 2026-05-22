@@ -1,9 +1,6 @@
 import { UNIT_MAP, TYPE_ICONS, formatUnit } from "./constants";
 
-/**
- * Renders a row of clickable cards for selecting the quantity type
- * (Length, Volume, Weight, Temperature).
- */
+
 export default function TypeSelector({ selected, onSelect }) {
   return (
     <>

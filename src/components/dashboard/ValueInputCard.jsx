@@ -1,19 +1,6 @@
 import { formatUnit } from "./constants";
 
-/**
- * A reusable card that displays a numeric input + unit dropdown.
- *
- * Props:
- *  - label        : heading text ("From", "To", "Second Value", "Result Unit")
- *  - value        : current numeric value (string)
- *  - onValueChange: setter for the numeric value (omit to hide the input)
- *  - unit         : currently selected unit
- *  - onUnitChange : setter for the unit
- *  - units        : list of available unit strings
- *  - inputId      : HTML id for the <input>
- *  - selectId     : HTML id for the <select>
- *  - placeholder  : placeholder shown when there is no input (e.g. "—")
- */
+
 export default function ValueInputCard({
   label,
   value,

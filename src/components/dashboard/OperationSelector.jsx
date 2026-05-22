@@ -1,9 +1,6 @@
 import { OPERATIONS } from "./constants";
 
-/**
- * Renders a horizontal button group for selecting the operation
- * (Compare, Convert, Add, Subtract, Divide).
- */
+
 export default function OperationSelector({ selected, onSelect }) {
   return (
     <>

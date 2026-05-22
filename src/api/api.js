@@ -95,3 +95,11 @@ export function divide(quantityType, firstValue, firstUnit, secondValue, secondU
     body: { quantityType, firstValue, firstUnit, secondValue, secondUnit, targetUnit },
   });
 }
+
+export function getHistory() {
+  return apiRequest("/quantity/history", { method: "GET" });
+}
+
+export function clearHistory() {
+  return apiRequest("/quantity/history", { method: "DELETE" });
+}

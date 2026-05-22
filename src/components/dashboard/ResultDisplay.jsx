@@ -1,18 +1,7 @@
 import { useState, useEffect } from "react";
 import { formatUnit } from "./constants";
 
-/**
- * A single, always-visible result card with a left accent bar.
- * Shows the result value on the left and the target-unit dropdown on the right.
- *
- * Props:
- *  - result            : { text, type } | null
- *  - loading           : boolean
- *  - showTargetUnit    : boolean
- *  - targetUnit        : string
- *  - onTargetUnitChange: function
- *  - units             : string[]
- */
+
 export default function ResultDisplay({
   result,
   loading,
@@ -76,7 +65,7 @@ export default function ResultDisplay({
               {result.text}
             </p>
             <small className="result-box__hint" onClick={handleCopy}>
-              {copied ? "✅ Copied!" : "📋"}
+              {copied ? "✅ Copied!" : ""}
             </small>
           </div>
         ) : (

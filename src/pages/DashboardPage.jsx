@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { convert, compare, add, subtract, divide } from "../api/api";
+import { convert, compare, add, subtract, divide, getHistory, clearHistory } from "../api/api";
 import { useAuth } from "../context/AuthContext";
 import { UNIT_MAP, formatUnit } from "../components/dashboard/constants";
 import TypeSelector from "../components/dashboard/TypeSelector";
 import OperationSelector from "../components/dashboard/OperationSelector";
 import ValueInputCard from "../components/dashboard/ValueInputCard";
 import ResultDisplay from "../components/dashboard/ResultDisplay";
+import HistoryCard from "../components/dashboard/HistoryCard";
 
 export default function DashboardPage() {
   const { logout } = useAuth();
@@ -22,8 +23,38 @@ export default function DashboardPage() {
   const [targetUnit, setTargetUnit] = useState("FEET");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const availableUnits = UNIT_MAP[quantityType];
+
+  // Fetch history on mount
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  async function fetchHistory() {
+    try {
+      const data = await getHistory();
+      setHistory(data);
+    } catch (err) {
+      console.error("Failed to fetch history", err);
+    }
+  }
+
+  async function handleClearHistory() {
+    if (!window.confirm("Are you sure you want to clear your history?")) return;
+    setHistoryLoading(true);
+    try {
+      await clearHistory();
+      setHistory([]);
+      toast.success("History cleared");
+    } catch (err) {
+      toast.error("Failed to clear history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
 
   // Reset units & result whenever the quantity type changes
   useEffect(() => {
@@ -75,6 +106,7 @@ export default function DashboardPage() {
         setResult({ text: data.resultValue.toFixed(3).toString(), type: "success" });
       }
       toast.success("Operation successful!");
+      fetchHistory(); // Refresh history
     } catch (err) {
       toast.error(err.message);
       if (err.message.includes("Session expired")) {
@@ -169,6 +201,13 @@ export default function DashboardPage() {
             targetUnit={targetUnit}
             onTargetUnitChange={setTargetUnit}
             units={availableUnits}
+          />
+
+          {/* History Card */}
+          <HistoryCard 
+            history={history} 
+            onClear={handleClearHistory} 
+            loading={historyLoading} 
           />
 
         </div>
