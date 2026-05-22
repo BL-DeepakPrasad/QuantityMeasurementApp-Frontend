@@ -1,0 +1,23 @@
+.history-card {
+  border-radius: 1rem;
+  background-color: var(--card-bg, #fff);
+  backdrop-filter: blur(10px);
+}
+
+.history-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.history-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
